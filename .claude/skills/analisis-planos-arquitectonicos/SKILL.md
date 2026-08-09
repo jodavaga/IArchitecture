@@ -1,27 +1,11 @@
 ---
 name: analisis-planos-arquitectonicos
-description: Analiza planos arquitectónicos (plantas, fachadas, cortes, cubiertas, detalles) de proyectos de vivienda, reforma o remodelación — ejes, niveles, cotas, áreas, tipología constructiva, materiales y programa de espacios. Úsalo SIEMPRE que el usuario suba o mencione un PDF/imagen de un plano, pida "analizar planos", "leer plano", "revisar plano", "extraer medidas", "clasificar materiales", "despiece" de un elemento (pérgolas, carpinterías, muros), presupuesto o cubicación a partir de planimetría, o trabaje como arquitecto/diseñador/presupuestista revisando CAD/Revit/SketchUp. Crítico para resaltar datos faltantes, ilegibles o inconsistentes ANTES de presupuestar o construir. Renderiza el PDF a alta resolución y cruza plantas por eje antes de concluir que un elemento no existe o no está diferenciado — nunca decide eso solo con el texto ya aplanado. No inventa valores — si un dato no se puede leer con confiabilidad, lo señala en vez de asumirlo. Al terminar, siempre guarda el informe y evidencia visual curada en `/outputs/<nombre-proyecto>/`.
+description: Analiza planos arquitectónicos (plantas, fachadas, cortes, cubiertas, detalles) de vivienda/reforma: ejes, niveles, cotas, áreas, materiales y programa. Úsalo cuando el usuario suba/mencione un PDF o imagen de plano, pida analizar, leer o revisar un plano, extraer medidas, clasificar materiales, hacer despiece de un elemento, o presupuestar/cubicar a partir de planimetría. No inventa valores faltantes; los marca como pendientes. Al terminar, siempre guarda el informe y evidencia visual curada en la carpeta outputs del proyecto (subcarpeta espejo de proyectos/); cada pregunta puntual de seguimiento sobre ese mismo plano también se guarda, en su propia subcarpeta descriptiva dentro de esa carpeta de outputs.
 ---
 
 # Análisis de Planos Arquitectónicos (vivienda / reforma)
 
-Skill para leer, clasificar y auditar técnicamente planos arquitectónicos entregados como PDF o imagen — plantas, fachadas, cortes, plantas de cubierta, localización — con foco en proyectos de reforma/remodelación de vivienda. El objetivo no es solo describir el plano, sino producir una lectura utilizable para toma de decisiones de diseño y para presupuesto, **dejando explícitamente marcado todo lo que no se puede confirmar con lo que hay en la lámina.**
-
-## Ubicación de proyectos y de las salidas del análisis (obligatorio, siempre)
-
-Los planos de cada proyecto viven en `/proyectos/<nombre-proyecto>/` (ej. `/proyectos/aosta/` contiene los PDF de planos de ese proyecto). Al iniciar un análisis, si el usuario no da una ruta explícita, buscar primero ahí por el nombre del proyecto mencionado.
-
-Un análisis de plano no termina en la respuesta de chat. Siempre, al cerrar cualquier análisis (completo o puntual), guarda el informe como archivo — sin que el usuario tenga que pedirlo:
-
-1. **Ubicación**: todo análisis que se guarde en disco (informe, tablas exportadas, evidencia visual) va en `/outputs/<nombre-proyecto>/`, replicando el mismo nombre de carpeta del proyecto en `/proyectos/`. Ej.: el análisis de `/proyectos/aosta/` se guarda en `/outputs/aosta/`. Si dentro del proyecto hay subcarpetas (por etapa, por manzana, etc.), replicar esa misma subestructura dentro de `/outputs/<nombre-proyecto>/` en vez de aplanarla. **Nunca** guardar el informe dentro de `/proyectos/<nombre-proyecto>/` ni en subcarpetas creadas ahí mismo (tipo `analisis/`) — ese árbol es solo para los planos fuente.
-   - Si ya existe una carpeta `/outputs/<nombre-proyecto>/` de un análisis anterior del mismo proyecto, reutilízala; no crear una nueva por cada lámina.
-2. **Formato del informe**: Markdown (`.md`), mismo contenido y estructura que la respuesta de chat (tablas, etiquetas de confianza, sección de pendientes). Nombre de archivo descriptivo, ej. `Analisis_<lamina-o-tema>_<proyecto>.md`.
-3. **Evidencia visual curada**: cuando el análisis involucró renderizar el PDF y hacer zoom/recortes para verificar algo (principio rector 2), no guardar todos los recortes de trabajo. Guardar solo:
-   - Una vista general de la lámina completa, legible (ej. `00_vista_general_<lamina>.png`).
-   - Un recorte por cada hallazgo/inconsistencia reportado en el informe, nombrado según el hallazgo (ej. `evidencia_acabado_mate.png`, `evidencia_cota_deck_discrepancia.png`), en una subcarpeta `evidencia/` dentro de `/outputs/<nombre-proyecto>/`.
-   - Descartar el resto de recortes intermedios (cuadrícula de barrido, zooms de prueba, intentos de OCR fallidos) — no aportan una vez resuelto el hallazgo.
-4. Si un archivo queda guardado en el lugar equivocado (por ejemplo, dentro de `/proyectos/` en vez de `/outputs/`), corregirlo de inmediato: copiarlo al lugar correcto y pedir permiso para borrar la copia mal ubicada (los archivos en carpetas conectadas del usuario no se pueden eliminar sin autorización explícita).
-5. Al terminar de guardar, compartir el archivo con el usuario (no solo mencionarlo) y describir en una línea qué se guardó y dónde, sin explicaciones largas.
+Skill para leer, clasificar y auditar técnicamente planos arquitectónicos entregados como PDF o imagen — plantas, fachadas, cortes, plantas de cubierta, localización — con foco en proyectos de reforma/remodelación de vivienda. El objetivo no es solo describir el plano, sino producir una lectura utilizable para toma de decisiones de diseño y para presupuesto, **dejando explícitamente marcado todo lo que no se puede confirmar con lo que hay en la lámina**, y **dejando ese análisis guardado como archivo**, no solo como respuesta de chat — esto aplica tanto al análisis inicial completo como a cada pregunta puntual posterior.
 
 ## Principio rector: nunca inventar un valor
 
@@ -58,6 +42,8 @@ crop.save('recorte.png')
 ```
 Luego usa la herramienta de vista sobre el recorte, no sobre la página completa (perderías resolución en el detalle). Repite el recorte en distintos cuadrantes si el primero no resuelve la duda. Si el texto extraído/OCR falla o es ambiguo en un recorte, apóyate en `pytesseract` (idioma `eng` suele funcionar mejor que `spa` si el paquete de idioma español no está instalado) para confirmar cifras y notas antes de darlas por buenas.
 
+**Si la sesión agota el límite de imágenes que puede mostrar en el chat** (la herramienta de lectura de imágenes empieza a rechazar archivos nuevos, incluso pequeños, con un error de "many-image requests" o similar), no insistas reintentando ni reduciendas de tamaño indefinidamente. Cambia de inmediato a extracción por OCR (`pytesseract.image_to_string` sobre el recorte) para seguir leyendo cotas y notas sin depender de la vista de imagen, y sigue aplicando el mismo rigor de no inventar valores: si el OCR es ambiguo, repórtalo como no confirmado en vez de adivinar.
+
 ### Cuando el mismo callout aparece repetido varias veces en una lámina
 No lo colapses automáticamente en "un solo elemento descrito más de una vez". Cada repetición suele corresponder a una instancia física distinta (una pérgola distinta, un vano distinto, un muro distinto) que comparte especificación pero no ubicación. Para asignar función a cada instancia:
 1. Ubica la posición de cada callout por eje/cuadrante en la lámina donde aparece (ej. planta de cubierta).
@@ -67,6 +53,8 @@ No lo colapses automáticamente en "un solo elemento descrito más de una vez". 
 ## Flujo de análisis (8 pasos)
 
 Ejecuta estos pasos en orden. Si el usuario pide "revisa este punto puntual" (p. ej. solo materiales, o solo cotas de un vano), igual corre mentalmente el paso relevante con el mismo rigor, pero no es necesario mostrar los 8 pasos completos — sí es obligatorio mostrar el hallazgo de vacíos de ese punto específico. **Si la pregunta del usuario es sobre un elemento específico (un componente, un despiece, un conteo de instancias), aplica primero la verificación visual a alta resolución del principio anterior antes de concluir cualquier ausencia o indiferenciación.**
+
+Si el archivo entregado contiene varias unidades/casas en la misma lámina o set (por ejemplo un PDF de varias páginas donde cada página es "VÁLIDO PARA CASA X") y el usuario pide analizar solo una unidad puntual, identifica primero cuál página/lámina corresponde a esa unidad (por el rótulo "VÁLIDO PARA..." o equivalente) y limita todo el análisis y el informe a esa página — no proceses ni describas el resto de unidades salvo que se te pida.
 
 ### 1. Metadatos y control de láminas
 Extraer y tabular: número de lámina, contenido, escala (ojo con "As indicated" — verificar si mezcla escalas entre vistas de la misma hoja), versión/revisión, fecha, firma/diseñador, alcance ("válido para..."). Si hay más de una lámina, verificar que la versión y fecha coincidan entre todas — una discrepancia de versión entre hojas del mismo set es una bandera roja de coordinación.
@@ -104,13 +92,14 @@ Listar cada corte/fachada/planta con su lámina de origen y verificar que el paq
 - **Vanos (puertas/ventanas)**: posición (por eje) y dimensión de cada vano deben coincidir entre planta, fachada y corte. Si un vano cambia de ancho/alto entre vistas, marcarlo como inconsistencia a reconciliar contra el cuadro de carpintería.
 - **Espesores de muro**: el espesor que se deduce del corte debe ser coherente con lo acotado (o deducible) en planta. Si en planta el muro no está acotado de forma independiente (ver paso 4), no cerrar esta verificación — dejarla marcada [Suponiendo].
 - **Ejes (paso 2)**: los mismos ejes deben poder rastrearse entre planta, fachada y corte. Si un eje presente en planta no se identifica en el corte correspondiente, señalarlo explícitamente en vez de asumir que es el mismo punto.
+- **Vistas 3D / isométricos vs. vistas acotadas (planta, alzado, corte)**: cuando la lámina incluye un render o isométrico junto a las vistas técnicas acotadas, verificar que ambos representen la misma configuración. Es un error real y ya observado que el isométrico refleje una reforma (p. ej. una isla de cocina nueva con un equipo reubicado) mientras que la planta y los alzados/cortes acotados —los que realmente sirven para fabricar y presupuestar— sigan mostrando la configuración anterior sin ese elemento. Si el render y las vistas acotadas no coinciden, es un hallazgo bloqueante, no un detalle menor: repórtalo en la sección de pendientes con máxima prioridad, porque presupuestar o fabricar con la vista acotada desactualizada contradice lo que el render (y probablemente el cliente) espera.
 
 Cada discrepancia encontrada en este chequeo se reporta con su etiqueta de confianza y pasa directo a la sección "Pendientes antes de presupuestar / construir" — es, junto con los detalles del paso 8, la fuente más frecuente de sobrecostos por coordinación deficiente.
 
 ### 8. Detalles constructivos
 Listar cada detalle referenciado (llamado con un globo/referencia) y verificar si el contenido del detalle está realmente presente y legible en el set. Priorizar detalles en puntos de riesgo (impermeabilización, claraboyas, remates de cubierta, encuentros de carpintería con muro) — si no están a resolución/escala legible, marcarlo como bloqueante antes de presupuestar o entregar a obra, no como una nota menor.
 
-## Salida esperada
+## Salida esperada (respuesta en el chat)
 
 - Responder siempre en español salvo que el usuario pida explícitamente otro idioma en el chat (la instrucción más reciente del usuario en la conversación manda sobre configuraciones previas).
 - Usar tablas para: metadatos de láminas, áreas, materiales por componente, comparativas (incluida la comparativa de cotas cruzadas entre planta/fachada/corte del paso 7).
@@ -118,6 +107,35 @@ Listar cada detalle referenciado (llamado con un globo/referencia) y verificar s
 - No pasar a estructurar partidas de presupuesto (APUs) mientras haya vacíos [Suponiendo] que afecten cantidades — ofrecer al usuario la opción de continuar con una línea de contingencia explícita si decide avanzar de todas formas, pero no decidir por él.
 - Tono: colega sénior, técnico y directo. No usar frases de relleno tipo "excelente pregunta" ni abrir con acuerdo automático.
 - Si el usuario pide saltar el paso 1 (metadatos) o cualquier otro paso, respetarlo y no mostrarlo como salida, pero mantener el rigor de etiquetado [Confirmado]/[Probable]/[Suponiendo] en lo que sí se entregue.
+
+## Guardado de resultados (obligatorio, siempre — incluye preguntas de seguimiento)
+
+Un análisis de plano no termina en la respuesta de chat. Siempre, al cerrar cualquier interacción sobre un plano — el análisis inicial completo **y cada pregunta puntual posterior** (presupuesto de un ítem, listado de materiales, detalle de carpintería, despiece de un elemento, etc.) — guarda el resultado como archivo, sin que el usuario tenga que pedirlo.
+
+1. **Ubicación base — `outputs` es un espejo 1:1 de `proyectos`.** La carpeta `outputs` replica exactamente la estructura de subcarpetas de primer nivel que hay dentro de `proyectos/`. Para ubicar dónde guardar, mira en qué subcarpeta de primer nivel bajo `proyectos/` vive el PDF/imagen que analizaste, y usa esa misma subcarpeta (mismo nombre) dentro de `outputs/`. No uses el nombre del "proyecto general" ni el nombre de la lámina para nombrar la carpeta — usa el nombre real de la subcarpeta de `proyectos/` donde está el archivo fuente.
+   - Ejemplo: `proyectos/aosta/detalles/PERGOLA.pdf` → todo lo relacionado con esa lámina va en `outputs/aosta/`.
+   - Ejemplo: `proyectos/cocina/DETALLE-COCINA.pdf` → todo lo relacionado va en `outputs/cocina/`, **aunque el contenido del plano pertenezca al mismo proyecto general (p. ej. AOSTA)** — lo que manda es la subcarpeta de primer nivel dentro de `proyectos/`, no el proyecto al que pertenece el contenido.
+   - Si el PDF está directamente en la raíz de `proyectos/` (sin subcarpeta), todo va directamente en la raíz de `outputs/`.
+   - Nunca guardar dentro de la carpeta del proyecto/plano original (ej. no en `proyectos/nombre-proyecto/detalles/` ni en subcarpetas creadas ahí mismo tipo `analisis/`) — eso rompe el espejo `outputs` ↔ `proyectos`.
+   - Si ya existe una carpeta de outputs para esa subcarpeta de `proyectos/` por un análisis anterior, reutilízala; no crees una nueva por cada lámina.
+   - Si en algún momento detectas que ya guardaste algo en la subcarpeta equivocada de `outputs/` (por ejemplo, mezclando el contenido de `cocina` dentro de `outputs/aosta/`), corrígelo de inmediato moviéndolo a la subcarpeta correcta — ver punto 5 más abajo.
+
+2. **Primer análisis completo de una lámina nueva** (el que corre los 8 pasos del flujo): el informe va **directo** dentro de `outputs/<subcarpeta-de-proyectos>/`, sin subcarpeta adicional. Nombre de archivo descriptivo, ej. `Analisis_lamina_proyecto.md`. La evidencia visual curada (ver punto 4) va en `outputs/<subcarpeta-de-proyectos>/evidencia/`, al mismo nivel que el informe. Esto no cambia respecto al comportamiento habitual.
+
+3. **Cualquier pregunta puntual posterior sobre ese mismo plano/proyecto** (no es el primer análisis completo — es, por ejemplo, "el listado de materiales de la cocina", "el presupuesto del mesón", "el despiece de la pérgola"): **no se guarda suelta junto al informe inicial.** Se crea una **subcarpeta descriptiva propia** dentro de `outputs/<subcarpeta-de-proyectos>/`, nombrada en minúsculas y guiones (kebab-case) según el tema concreto de esa pregunta — no según el nombre del plano ni "seguimiento" ni "pregunta-2". Ejemplos: `outputs/cocina/listado-materiales-proveedores/`, `outputs/aosta/presupuesto-mesón-quarztone/`, `outputs/aosta/despiece-pergola-deck/`.
+   - Dentro de esa subcarpeta descriptiva va el archivo `.md` de la respuesta puntual (nombre de archivo también descriptivo, ej. `Listado_materiales_proveedores.md`).
+   - Si esa pregunta puntual generó evidencia visual propia (renders o recortes nuevos, distintos a los ya guardados en el análisis inicial), va en una subcarpeta `evidencia/` anidada dentro de esa misma carpeta descriptiva — no se mezcla con la `evidencia/` del análisis inicial ni con la de otra pregunta puntual.
+   - Si el usuario vuelve a preguntar sobre el mismo tema puntual más adelante (ej. actualiza el listado de materiales), reutiliza la misma subcarpeta descriptiva ya creada — no dupliques con un nombre ligeramente distinto.
+   - Si dos preguntas puntuales tratan temas claramente distintos, cada una tiene su propia subcarpeta descriptiva — no las mezcles en una carpeta genérica tipo "varios" o "seguimiento".
+
+4. **Evidencia visual curada** (aplica tanto al análisis inicial como a preguntas puntuales que involucraron renderizar el PDF y hacer zoom/recortes para verificar algo, principio rector 2): no guardes todos los recortes de trabajo, solo:
+   - Una vista general de la lámina completa, legible (ej. `00_vista_general_lamina.png`), si aplica al caso.
+   - Un recorte por cada hallazgo/inconsistencia reportado, nombrado según el hallazgo (ej. `evidencia_acabado_mate.png`, `evidencia_cota_deck_discrepancia.png`).
+   - Descarta el resto de recortes intermedios (cuadrícula de barrido, zooms de prueba, intentos de OCR fallidos) — no aportan una vez resuelto el hallazgo.
+
+5. Si detectas que un archivo quedó guardado en el lugar equivocado (dentro de la carpeta del proyecto en vez de en outputs, en la subcarpeta de `outputs/` que no corresponde según el espejo con `proyectos/`, o suelto en `outputs/<subcarpeta>/` cuando debía ir en su propia subcarpeta descriptiva), corrígelo de inmediato: copia el archivo a la ubicación correcta, verifica que quedó bien, y luego pide permiso para borrar la copia mal ubicada (los archivos en carpetas conectadas del usuario no se pueden eliminar sin autorización explícita — usa la herramienta de borrado disponible en el entorno, que pedirá aprobación).
+
+6. Al terminar de guardar, comparte el archivo con el usuario (no solo lo menciones) y describe en una línea qué se guardó y dónde, sin explicaciones largas.
 
 ## Recursos adicionales
 
