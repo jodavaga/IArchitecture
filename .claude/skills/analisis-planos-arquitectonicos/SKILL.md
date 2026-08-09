@@ -1,17 +1,27 @@
 ---
 name: analisis-planos-arquitectonicos
-description: Analiza planos arquitectónicos (plantas, fachadas, cortes, cubiertas, detalles) de proyectos de vivienda, reforma o remodelación — ejes, niveles, cotas, áreas, tipología constructiva, materiales y programa de espacios. Úsalo SIEMPRE que el usuario suba o mencione un PDF/imagen de un plano, pida "analizar planos", "leer plano", "revisar plano", "extraer medidas", "clasificar materiales", "despiece" de un elemento (pérgolas, carpinterías, muros), presupuesto o cubicación a partir de planimetría, o trabaje como arquitecto/diseñador/presupuestista revisando CAD/Revit/SketchUp. Crítico para resaltar datos faltantes, ilegibles o inconsistentes ANTES de presupuestar o construir. Renderiza el PDF a alta resolución y cruza plantas por eje antes de concluir que un elemento no existe o no está diferenciado — nunca decide eso solo con el texto ya aplanado. No inventa valores — si un dato no se puede leer con confiabilidad, lo señala en vez de asumirlo.
+description: Analiza planos arquitectónicos (plantas, fachadas, cortes, cubiertas, detalles) de proyectos de vivienda, reforma o remodelación — ejes, niveles, cotas, áreas, tipología constructiva, materiales y programa de espacios. Úsalo SIEMPRE que el usuario suba o mencione un PDF/imagen de un plano, pida "analizar planos", "leer plano", "revisar plano", "extraer medidas", "clasificar materiales", "despiece" de un elemento (pérgolas, carpinterías, muros), presupuesto o cubicación a partir de planimetría, o trabaje como arquitecto/diseñador/presupuestista revisando CAD/Revit/SketchUp. Crítico para resaltar datos faltantes, ilegibles o inconsistentes ANTES de presupuestar o construir. Renderiza el PDF a alta resolución y cruza plantas por eje antes de concluir que un elemento no existe o no está diferenciado — nunca decide eso solo con el texto ya aplanado. No inventa valores — si un dato no se puede leer con confiabilidad, lo señala en vez de asumirlo. Al terminar, siempre guarda el informe y evidencia visual curada en `/outputs/<nombre-proyecto>/`.
 ---
 
 # Análisis de Planos Arquitectónicos (vivienda / reforma)
 
 Skill para leer, clasificar y auditar técnicamente planos arquitectónicos entregados como PDF o imagen — plantas, fachadas, cortes, plantas de cubierta, localización — con foco en proyectos de reforma/remodelación de vivienda. El objetivo no es solo describir el plano, sino producir una lectura utilizable para toma de decisiones de diseño y para presupuesto, **dejando explícitamente marcado todo lo que no se puede confirmar con lo que hay en la lámina.**
 
-## Ubicación de proyectos y de las salidas del análisis
+## Ubicación de proyectos y de las salidas del análisis (obligatorio, siempre)
 
 Los planos de cada proyecto viven en `/proyectos/<nombre-proyecto>/` (ej. `/proyectos/aosta/` contiene los PDF de planos de ese proyecto). Al iniciar un análisis, si el usuario no da una ruta explícita, buscar primero ahí por el nombre del proyecto mencionado.
 
-Todo análisis que se guarde en disco (informe, tablas exportadas, recortes de verificación visual, etc.) va en `/outputs/<nombre-proyecto>/`, replicando el mismo nombre de carpeta del proyecto en `/proyectos/`. Ej.: el análisis de `/proyectos/aosta/` se guarda en `/outputs/aosta/`. Si dentro del proyecto hay subcarpetas (por etapa, por manzana, etc.), replicar esa misma subestructura dentro de `/outputs/<nombre-proyecto>/` en vez de aplanarla.
+Un análisis de plano no termina en la respuesta de chat. Siempre, al cerrar cualquier análisis (completo o puntual), guarda el informe como archivo — sin que el usuario tenga que pedirlo:
+
+1. **Ubicación**: todo análisis que se guarde en disco (informe, tablas exportadas, evidencia visual) va en `/outputs/<nombre-proyecto>/`, replicando el mismo nombre de carpeta del proyecto en `/proyectos/`. Ej.: el análisis de `/proyectos/aosta/` se guarda en `/outputs/aosta/`. Si dentro del proyecto hay subcarpetas (por etapa, por manzana, etc.), replicar esa misma subestructura dentro de `/outputs/<nombre-proyecto>/` en vez de aplanarla. **Nunca** guardar el informe dentro de `/proyectos/<nombre-proyecto>/` ni en subcarpetas creadas ahí mismo (tipo `analisis/`) — ese árbol es solo para los planos fuente.
+   - Si ya existe una carpeta `/outputs/<nombre-proyecto>/` de un análisis anterior del mismo proyecto, reutilízala; no crear una nueva por cada lámina.
+2. **Formato del informe**: Markdown (`.md`), mismo contenido y estructura que la respuesta de chat (tablas, etiquetas de confianza, sección de pendientes). Nombre de archivo descriptivo, ej. `Analisis_<lamina-o-tema>_<proyecto>.md`.
+3. **Evidencia visual curada**: cuando el análisis involucró renderizar el PDF y hacer zoom/recortes para verificar algo (principio rector 2), no guardar todos los recortes de trabajo. Guardar solo:
+   - Una vista general de la lámina completa, legible (ej. `00_vista_general_<lamina>.png`).
+   - Un recorte por cada hallazgo/inconsistencia reportado en el informe, nombrado según el hallazgo (ej. `evidencia_acabado_mate.png`, `evidencia_cota_deck_discrepancia.png`), en una subcarpeta `evidencia/` dentro de `/outputs/<nombre-proyecto>/`.
+   - Descartar el resto de recortes intermedios (cuadrícula de barrido, zooms de prueba, intentos de OCR fallidos) — no aportan una vez resuelto el hallazgo.
+4. Si un archivo queda guardado en el lugar equivocado (por ejemplo, dentro de `/proyectos/` en vez de `/outputs/`), corregirlo de inmediato: copiarlo al lugar correcto y pedir permiso para borrar la copia mal ubicada (los archivos en carpetas conectadas del usuario no se pueden eliminar sin autorización explícita).
+5. Al terminar de guardar, compartir el archivo con el usuario (no solo mencionarlo) y describir en una línea qué se guardó y dónde, sin explicaciones largas.
 
 ## Principio rector: nunca inventar un valor
 
@@ -46,7 +56,7 @@ w, h = im.size
 crop = im.crop((x0, y0, x1, y1))  # usar fracciones de w,h para ubicar el cuadrante de interés
 crop.save('recorte.png')
 ```
-Luego usa la herramienta de vista sobre el recorte, no sobre la página completa (perderías resolución en el detalle). Repite el recorte en distintos cuadrantes si el primero no resuelve la duda.
+Luego usa la herramienta de vista sobre el recorte, no sobre la página completa (perderías resolución en el detalle). Repite el recorte en distintos cuadrantes si el primero no resuelve la duda. Si el texto extraído/OCR falla o es ambiguo en un recorte, apóyate en `pytesseract` (idioma `eng` suele funcionar mejor que `spa` si el paquete de idioma español no está instalado) para confirmar cifras y notas antes de darlas por buenas.
 
 ### Cuando el mismo callout aparece repetido varias veces en una lámina
 No lo colapses automáticamente en "un solo elemento descrito más de una vez". Cada repetición suele corresponder a una instancia física distinta (una pérgola distinta, un vano distinto, un muro distinto) que comparte especificación pero no ubicación. Para asignar función a cada instancia:
@@ -65,12 +75,13 @@ Extraer y tabular: número de lámina, contenido, escala (ojo con "As indicated"
 Identificar ejes verticales (letras) y horizontales (números), o el criterio que use el plano. Registrar ejes intermedios o con prima (ej. "2'") — estos casi siempre responden a un desfase estructural o de partición que no se justifica en la planta arquitectónica; marcar como [Suponiendo] su origen y señalar que se debe cruzar con la planta estructural.
 
 ### 3. Niveles
-Tabular todos los niveles con cota (Nivel 1, Enrase, Cubierta, etc.). Cualquier cota numérica suelta sin etiqueta clara (ej. un número cerca de una nota de urbanismo) no se asume como nivel de piso — se marca [Suponiendo] y se pide la lámina de topografía/urbanismo para resolverla.
+Tabular todos los niveles con cota (Nivel 1, Enrase, Cubierta, etc.). Cualquier cota numérica suelta sin etiqueta clara (ej. un número cerca de una nota de urbanismo) no se asume como nivel de piso — se marca [Suponiendo] y se pide la lámina de topografía/urbanismo para resolverla. Si un nivel aparece rotulado como una "opción" entre varias (p. ej. "Nivel -1 Opción 3"), señalarlo explícitamente como pendiente de confirmar cuál opción rige para la unidad/vivienda analizada.
 
 ### 4. Áreas y cotas
 - Tabular áreas licenciadas, área de reforma, área total, área privada — por unidad si hay más de una.
 - Si hay asimetría entre unidades "gemelas" (misma área licenciada pero distinta área de reforma), señalarlo explícitamente: esto es una diferencia real de costo, no se promedia entre unidades.
 - Registrar las cadenas de cotas visibles en fachadas/cortes, pero **no cerrar cubicación de muros con ellas si el espesor de muro no está acotado de forma independiente.**
+- Verificar que las cotas parciales de una cadena sumen la cota total marcada; si no cierran, reportar la discrepancia numérica exacta en vez de ignorarla.
 
 ### 5. Clasificación de espacios / programa
 Listar, por unidad si aplica, cada intervención de reforma agrupada por ambiente (cocina, alcobas, baños, social, exteriores) y por disciplina si el plano lo separa (arquitectónico vs eléctrico vs hidrosanitario). Cruzar dimensiones de vanos/mobiliario contra criterios ergonómicos reales (ver `references/ergonomia.md`) y marcar cualquier incumplimiento.
@@ -81,6 +92,8 @@ Listar, por unidad si aplica, cada intervención de reforma agrupada por ambient
 Tabular por componente (muro, estructura, cubierta, carpintería, cielo, pisos si están indicados) el sistema constructivo y acabado, diferenciando por unidad si los colores/specs cambian. Si el escaneo tiene texto cortado, espejado o superpuesto (común en plantas simétricas con anotaciones a ambos lados), no completar por analogía sin marcarlo [Suponiendo] — pedir export vectorial limpio si se necesita para contrato.
 
 Si el usuario pide un **despiece por elemento específico** (una pérgola, una carpintería, un tipo de muro) y el mismo callout de material aparece más de una vez en la lámina, no asumas que es un solo elemento — aplica el procedimiento de verificación visual y cruce por eje del principio rector 2 antes de responder cuántas instancias hay y qué función cumple cada una.
+
+**Chequeo de concordancia de especificación entre vistas:** cuando el mismo elemento (misma marca de perfil, misma viga) aparece rotulado en más de una vista de la lámina, comparar literalmente el texto de cada rótulo — acabado (p. ej. "negro mate" vs "negro semimate") y orden de dimensiones (p. ej. "150X100X4" vs "100X150X4"). No asumir que es la misma especificación solo porque el nombre del perfil coincide a simple vista; reportar la discrepancia textual exacta y marcarla como pendiente de reconciliar contra el plano estructural.
 
 ### 7. Cortes, fachadas y coordinación de medidas
 Listar cada corte/fachada/planta con su lámina de origen y verificar que el paquete de envolvente esté completo (todas las fachadas + cubierta + cortes suficientes para entender el volumen). Señalar cualquier corte o fachada referenciado en una lámina pero no encontrado en el set entregado.
