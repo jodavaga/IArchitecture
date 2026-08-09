@@ -7,6 +7,12 @@ description: Analiza planos arquitectónicos (plantas, fachadas, cortes, cubiert
 
 Skill para leer, clasificar y auditar técnicamente planos arquitectónicos entregados como PDF o imagen — plantas, fachadas, cortes, plantas de cubierta, localización — con foco en proyectos de reforma/remodelación de vivienda. El objetivo no es solo describir el plano, sino producir una lectura utilizable para toma de decisiones de diseño y para presupuesto, **dejando explícitamente marcado todo lo que no se puede confirmar con lo que hay en la lámina.**
 
+## Ubicación de proyectos y de las salidas del análisis
+
+Los planos de cada proyecto viven en `/proyectos/<nombre-proyecto>/` (ej. `/proyectos/aosta/` contiene los PDF de planos de ese proyecto). Al iniciar un análisis, si el usuario no da una ruta explícita, buscar primero ahí por el nombre del proyecto mencionado.
+
+Todo análisis que se guarde en disco (informe, tablas exportadas, recortes de verificación visual, etc.) va en `/outputs/<nombre-proyecto>/`, replicando el mismo nombre de carpeta del proyecto en `/proyectos/`. Ej.: el análisis de `/proyectos/aosta/` se guarda en `/outputs/aosta/`. Si dentro del proyecto hay subcarpetas (por etapa, por manzana, etc.), replicar esa misma subestructura dentro de `/outputs/<nombre-proyecto>/` en vez de aplanarla.
+
 ## Principio rector: nunca inventar un valor
 
 Esta es la regla más importante del skill. Si una cota, material, escala o nivel no se puede leer de forma confiable en el documento:
@@ -76,8 +82,17 @@ Tabular por componente (muro, estructura, cubierta, carpintería, cielo, pisos s
 
 Si el usuario pide un **despiece por elemento específico** (una pérgola, una carpintería, un tipo de muro) y el mismo callout de material aparece más de una vez en la lámina, no asumas que es un solo elemento — aplica el procedimiento de verificación visual y cruce por eje del principio rector 2 antes de responder cuántas instancias hay y qué función cumple cada una.
 
-### 7. Cortes, fachadas y referencias cruzadas
+### 7. Cortes, fachadas y coordinación de medidas
 Listar cada corte/fachada/planta con su lámina de origen y verificar que el paquete de envolvente esté completo (todas las fachadas + cubierta + cortes suficientes para entender el volumen). Señalar cualquier corte o fachada referenciado en una lámina pero no encontrado en el set entregado.
+
+**Chequeo de concordancia obligatorio entre vistas** — no basta con que la vista exista, sus cotas tienen que coincidir con las de las otras vistas del mismo elemento:
+- **Alturas**: la altura de piso a techo / entrepiso / cumbrera en el corte debe coincidir con la misma altura leída en la fachada. Si no coinciden, no promediar ni elegir una — reportar ambas con su lámina de origen.
+- **Niveles (paso 3)**: cada nivel tabulado debe aparecer con la misma cota en corte y en fachada. Un nivel que solo aparece en una vista es una bandera roja de coordinación.
+- **Vanos (puertas/ventanas)**: posición (por eje) y dimensión de cada vano deben coincidir entre planta, fachada y corte. Si un vano cambia de ancho/alto entre vistas, marcarlo como inconsistencia a reconciliar contra el cuadro de carpintería.
+- **Espesores de muro**: el espesor que se deduce del corte debe ser coherente con lo acotado (o deducible) en planta. Si en planta el muro no está acotado de forma independiente (ver paso 4), no cerrar esta verificación — dejarla marcada [Suponiendo].
+- **Ejes (paso 2)**: los mismos ejes deben poder rastrearse entre planta, fachada y corte. Si un eje presente en planta no se identifica en el corte correspondiente, señalarlo explícitamente en vez de asumir que es el mismo punto.
+
+Cada discrepancia encontrada en este chequeo se reporta con su etiqueta de confianza y pasa directo a la sección "Pendientes antes de presupuestar / construir" — es, junto con los detalles del paso 8, la fuente más frecuente de sobrecostos por coordinación deficiente.
 
 ### 8. Detalles constructivos
 Listar cada detalle referenciado (llamado con un globo/referencia) y verificar si el contenido del detalle está realmente presente y legible en el set. Priorizar detalles en puntos de riesgo (impermeabilización, claraboyas, remates de cubierta, encuentros de carpintería con muro) — si no están a resolución/escala legible, marcarlo como bloqueante antes de presupuestar o entregar a obra, no como una nota menor.
@@ -85,10 +100,11 @@ Listar cada detalle referenciado (llamado con un globo/referencia) y verificar s
 ## Salida esperada
 
 - Responder siempre en español salvo que el usuario pida explícitamente otro idioma en el chat (la instrucción más reciente del usuario en la conversación manda sobre configuraciones previas).
-- Usar tablas para: metadatos de láminas, áreas, materiales por componente, comparativas.
+- Usar tablas para: metadatos de láminas, áreas, materiales por componente, comparativas (incluida la comparativa de cotas cruzadas entre planta/fachada/corte del paso 7).
 - Cerrar siempre con una sección **"Pendientes antes de presupuestar / construir"** listando cada vacío detectado, qué lámina o dato lo resuelve, y por qué importa (riesgo técnico, riesgo de costo, o coordinación).
 - No pasar a estructurar partidas de presupuesto (APUs) mientras haya vacíos [Suponiendo] que afecten cantidades — ofrecer al usuario la opción de continuar con una línea de contingencia explícita si decide avanzar de todas formas, pero no decidir por él.
 - Tono: colega sénior, técnico y directo. No usar frases de relleno tipo "excelente pregunta" ni abrir con acuerdo automático.
+- Si el usuario pide saltar el paso 1 (metadatos) o cualquier otro paso, respetarlo y no mostrarlo como salida, pero mantener el rigor de etiquetado [Confirmado]/[Probable]/[Suponiendo] en lo que sí se entregue.
 
 ## Recursos adicionales
 
